@@ -276,11 +276,12 @@ function render(){
     const corrected = distance * Math.cos(rayAngle - player.angle); 
     const wallHeight = Math.min(10000, (H*1.2) / Math.max(0.0001, corrected)); 
     const col = i * (W/numRays);
-    if(hit){ 
-      ctx.fillStyle = hitTile===2 ? '#aa4' : '#6b6'; 
-      ctx.fillRect(col, half - wallHeight/2, Math.ceil(W/numRays)+1, wallHeight); 
-      ctx.fillStyle = 'rgba(0,0,0,0.18)'; 
-      ctx.fillRect(col, half - wallHeight/2, Math.ceil(W/numRays)+1, wallHeight); 
+    if(hit){
+      ctx.fillStyle = hitTile===2 ? '#aa4' : '#6b6';
+      ctx.fillRect(col, half - wallHeight/2, Math.ceil(W/numRays)+1, wallHeight);
+      const shade = Math.min(0.8, corrected / 20);
+      ctx.fillStyle = `rgba(0,0,0,${shade})`;
+      ctx.fillRect(col, half - wallHeight/2, Math.ceil(W/numRays)+1, wallHeight);
     }
   }
   // Zombies als Billboards — nur rendern, wenn Line-of-Sight vorhanden (Verstecken hinter Wänden)
@@ -293,13 +294,16 @@ function render(){
       const screenX = (0.5 + (ang / (fov)) ) * W; 
       const size = Math.min(H*1.2, (H*0.9) / dist); 
       const y = H/2 - size/2; 
-      const hpRatio = Math.max(0, z.hp) / (30+level*5); 
-      ctx.fillStyle = `rgba(${Math.floor(200*(1-hpRatio)+55)},${Math.floor(60*hpRatio+60)},${Math.floor(60*hpRatio+20)},1)`; 
-      ctx.fillRect(screenX - size/4, y, size/2, size); 
-      ctx.fillStyle = '#222'; 
-      ctx.fillRect(screenX - size/4, y-6, size/2,4); 
-      ctx.fillStyle = '#f44'; 
-      ctx.fillRect(screenX - size/4, y-6, (size/2)*hpRatio,4); 
+      const hpRatio = Math.max(0, z.hp) / (30+level*5);
+      ctx.fillStyle = `rgba(${Math.floor(200*(1-hpRatio)+55)},${Math.floor(60*hpRatio+60)},${Math.floor(60*hpRatio+20)},1)`;
+      ctx.fillRect(screenX - size/4, y, size/2, size);
+      const zShade = Math.min(0.8, dist / 20);
+      ctx.fillStyle = `rgba(0,0,0,${zShade})`;
+      ctx.fillRect(screenX - size/4, y, size/2, size);
+      ctx.fillStyle = '#222';
+      ctx.fillRect(screenX - size/4, y-6, size/2,4);
+      ctx.fillStyle = '#f44';
+      ctx.fillRect(screenX - size/4, y-6, (size/2)*hpRatio,4);
     }
   }
 
