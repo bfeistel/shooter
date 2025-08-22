@@ -10,8 +10,41 @@ const elObjective = document.getElementById('objective');
 const msg = document.getElementById('message');
 const crosshair = document.getElementById('crosshair');
 
-// Farbanpassung: einfarbiger Boden
-const floorColor = '#2e2e2e'; // grau
+// Texturen für Boden und Wände
+const floorColor = '#2e2e2e'; // Fallbackfarbe
+let floorPattern, wallPattern;
+
+function createTextures(){
+  // Ziegelwand
+  const brickCanvas = document.createElement('canvas');
+  brickCanvas.width = 64;
+  brickCanvas.height = 32;
+  const bctx = brickCanvas.getContext('2d');
+  bctx.fillStyle = '#b44';
+  bctx.fillRect(0,0,64,32);
+  bctx.strokeStyle = '#888';
+  bctx.lineWidth = 4;
+  bctx.beginPath();
+  bctx.moveTo(0,16); bctx.lineTo(64,16); // horizontale Fuge
+  bctx.moveTo(32,0); bctx.lineTo(32,16); // vertikale Fuge oben
+  bctx.moveTo(16,16); bctx.lineTo(16,32); // vertikale Fugen unten
+  bctx.moveTo(48,16); bctx.lineTo(48,32);
+  bctx.stroke();
+  wallPattern = ctx.createPattern(brickCanvas,'repeat');
+
+  // Asphaltboden
+  const asphaltCanvas = document.createElement('canvas');
+  asphaltCanvas.width = asphaltCanvas.height = 64;
+  const actx = asphaltCanvas.getContext('2d');
+  actx.fillStyle = '#555';
+  actx.fillRect(0,0,64,64);
+  for(let i=0;i<200;i++){ // kleine Sprenkel
+    const g = Math.floor(80 + Math.random()*40);
+    actx.fillStyle = `rgb(${g},${g},${g})`;
+    actx.fillRect(Math.random()*64, Math.random()*64, 1,1);
+  }
+  floorPattern = ctx.createPattern(asphaltCanvas,'repeat');
+}
 
 // Resize
 function resize(){canvas.width = window.innerWidth; canvas.height = window.innerHeight - 56}
@@ -297,8 +330,8 @@ function render(){
   ctx.fillStyle = '#88b';
   ctx.fillRect(0,0,W,horizon);
 
-  // Einfarbiger Boden (unten)
-  ctx.fillStyle = floorColor;
+  // Boden
+  ctx.fillStyle = floorPattern || floorColor;
   ctx.fillRect(0,horizon,W,H - horizon);
 
   const fov = Math.PI/3; 
@@ -322,7 +355,7 @@ function render(){
     const wallHeight = Math.min(10000, (H*1.2) / Math.max(0.0001, corrected)); 
     const col = i * (W/numRays);
     if(hit){
-      ctx.fillStyle = hitTile===2 ? '#aa4' : '#6b6';
+      ctx.fillStyle = hitTile===2 ? '#aa4' : (wallPattern || '#6b6');
       ctx.fillRect(col, horizon - wallHeight/2, Math.ceil(W/numRays)+1, wallHeight);
       const shade = Math.min(0.8, corrected / 20);
       ctx.fillStyle = `rgba(0,0,0,${shade})`;
@@ -413,6 +446,7 @@ if(!pointerLockSupported){ showMessage('PointerLock nicht verfügbar — Fallbac
 // Start Spiel nach dem Laden der Texturen
 async function init(){
   await loadZombieImages();
+  createTextures();
   startLevel(1);
   loop();
 }
