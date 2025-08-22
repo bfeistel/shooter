@@ -24,6 +24,39 @@ let player = {x:2.5,y:2.5,angle:0,pitch:0,moveSpeed:2.6,health:100};
 let keys = {};
 let zombies = [];
 let lastTime = performance.now();
+// Zombie-Texturen dynamisch aus dem assets-Verzeichnis laden
+let zombieImages = [];
+async function loadZombieImages(){
+  try{
+    const res = await fetch('assets/');
+    if(res.ok){
+      const text = await res.text();
+      const regex = /href="([^"?]*\.png)"/gi;
+      let match;
+      while((match = regex.exec(text)) !== null){
+        const src = 'assets/' + match[1];
+        const img = new Image();
+        img.src = src;
+        zombieImages.push(img);
+      }
+    }
+  }catch(e){}
+  // Fallback: zombie1.png, zombie2.png, ...
+  if(zombieImages.length === 0){
+    for(let i=1;;i++){
+      const src = `assets/zombie${i}.png`;
+      try{
+        const r = await fetch(src);
+        if(!r.ok) break;
+        const img = new Image();
+        img.src = src;
+        zombieImages.push(img);
+      }catch(err){
+        break;
+      }
+    }
+  }
+}
 // Minimap configuration
 const minimapTileSize = 10; // pixel per tile in the minimap (larger minimap)
 const minimapMargin = 8;   // distance from top-left corner
@@ -102,7 +135,13 @@ function spawnZombies(n){
       choice = floors[Math.floor(Math.random()*floors.length)];
       tries++;
     } while((Math.hypot(choice.x+0.5-player.x, choice.y+0.5-player.y) < 3 || (choice.x===Math.floor(player.x) && choice.y===Math.floor(player.y))) && tries<200);
-    zombies.push({x:choice.x+0.5, y:choice.y+0.5, hp:30+level*5, speed:0.8+level*0.15});
+    zombies.push({
+      x:choice.x+0.5,
+      y:choice.y+0.5,
+      hp:30+level*5,
+      speed:0.8+level*0.15,
+      img: zombieImages.length ? zombieImages[Math.floor(Math.random()*zombieImages.length)] : null
+    });
   }
 }
 
@@ -297,12 +336,17 @@ function render(){
     const dist = Math.hypot(vx,vy); 
     const ang = normalizeAngle(Math.atan2(vy,vx) - player.angle); 
     if(Math.abs(ang) < fov/2 && dist>0.4){ 
-      const screenX = (0.5 + (ang / (fov)) ) * W; 
-      const size = Math.min(H*1.2, (H*0.9) / dist); 
+      const screenX = (0.5 + (ang / (fov)) ) * W;
+      const size = Math.min(H*1.2, (H*0.9) / dist);
       const y = horizon - size/2;
       const hpRatio = Math.max(0, z.hp) / (30+level*5);
-      ctx.fillStyle = `rgba(${Math.floor(200*(1-hpRatio)+55)},${Math.floor(60*hpRatio+60)},${Math.floor(60*hpRatio+20)},1)`;
-      ctx.fillRect(screenX - size/4, y, size/2, size);
+      const img = z.img;
+      if(img && img.complete){
+        ctx.drawImage(img, screenX - size/4, y, size/2, size);
+      } else {
+        ctx.fillStyle = '#6b6';
+        ctx.fillRect(screenX - size/4, y, size/2, size);
+      }
       const zShade = Math.min(0.8, dist / 20);
       ctx.fillStyle = `rgba(0,0,0,${zShade})`;
       ctx.fillRect(screenX - size/4, y, size/2, size);
@@ -366,6 +410,11 @@ crosshair.style.display = 'none';
 try{ if(!HTMLCanvasElement.prototype.requestPointerLock) pointerLockSupported = false; } catch(e){ pointerLockSupported = false; }
 if(!pointerLockSupported){ showMessage('PointerLock nicht verfügbar — Fallback-Modus aktiv. Drücke ESC, um Maus frei zu geben.',5000); }
 
-// Start Spiel
-startLevel(1);
-loop();
+// Start Spiel nach dem Laden der Texturen
+async function init(){
+  await loadZombieImages();
+  startLevel(1);
+  loop();
+}
+
+init();
