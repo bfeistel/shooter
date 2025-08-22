@@ -24,6 +24,9 @@ let player = {x:2.5,y:2.5,angle:0,moveSpeed:2.6,health:100};
 let keys = {};
 let zombies = [];
 let lastTime = performance.now();
+// Minimap configuration
+const minimapTileSize = 6; // pixel per tile in the minimap
+const minimapMargin = 8;   // distance from top-left corner
 
 // Waffen
 const weaponList = ['rifle','pistol'];
@@ -281,7 +284,7 @@ function render(){
     }
   }
   // Zombies als Billboards — nur rendern, wenn Line-of-Sight vorhanden (Verstecken hinter Wänden)
-  for(const z of zombies){ 
+  for(const z of zombies){
     if(!lineOfSight(player.x, player.y, z.x, z.y)) continue; // nicht sichtbar durch Wände
     const vx = z.x - player.x, vy = z.y - player.y; 
     const dist = Math.hypot(vx,vy); 
@@ -297,8 +300,56 @@ function render(){
       ctx.fillRect(screenX - size/4, y-6, size/2,4); 
       ctx.fillStyle = '#f44'; 
       ctx.fillRect(screenX - size/4, y-6, (size/2)*hpRatio,4); 
-    } 
+    }
   }
+
+  drawMinimap();
+}
+
+function drawMinimap(){
+  const tileSize = minimapTileSize;
+  const mapW = map[0].length * tileSize;
+  const mapH = map.length * tileSize;
+  const offsetX = minimapMargin;
+  const offsetY = minimapMargin;
+
+  ctx.save();
+  ctx.globalAlpha = 0.8;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(offsetX-2, offsetY-2, mapW+4, mapH+4);
+
+  for(let y=0;y<map.length;y++){
+    for(let x=0;x<map[0].length;x++){
+      const tile = map[y][x];
+      if(tile===1) ctx.fillStyle='#444';
+      else if(tile===2) ctx.fillStyle='#aa4';
+      else ctx.fillStyle='#222';
+      ctx.fillRect(offsetX + x*tileSize, offsetY + y*tileSize, tileSize, tileSize);
+    }
+  }
+
+  // Player
+  const px = offsetX + player.x*tileSize;
+  const py = offsetY + player.y*tileSize;
+  ctx.fillStyle = '#0ff';
+  ctx.beginPath();
+  ctx.arc(px, py, tileSize/2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#0ff';
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  ctx.lineTo(px + Math.cos(player.angle)*tileSize, py + Math.sin(player.angle)*tileSize);
+  ctx.stroke();
+
+  // Zombies
+  ctx.fillStyle = '#f44';
+  for(const z of zombies){
+    const zx = offsetX + z.x*tileSize;
+    const zy = offsetY + z.y*tileSize;
+    ctx.fillRect(zx - tileSize/2, zy - tileSize/2, tileSize, tileSize);
+  }
+
+  ctx.restore();
 }
 
 function normalizeAngle(a){ while(a<=-Math.PI) a+=2*Math.PI; while(a>Math.PI) a-=2*Math.PI; return a }
