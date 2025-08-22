@@ -14,36 +14,54 @@ const crosshair = document.getElementById('crosshair');
 const floorColor = '#2e2e2e'; // Fallbackfarbe
 let floorPattern, wallPattern;
 
-function createTextures(){
-  // Ziegelwand
-  const brickCanvas = document.createElement('canvas');
-  brickCanvas.width = 64;
-  brickCanvas.height = 32;
-  const bctx = brickCanvas.getContext('2d');
-  bctx.fillStyle = '#b44';
-  bctx.fillRect(0,0,64,32);
-  bctx.strokeStyle = '#888';
-  bctx.lineWidth = 4;
-  bctx.beginPath();
-  bctx.moveTo(0,16); bctx.lineTo(64,16); // horizontale Fuge
-  bctx.moveTo(32,0); bctx.lineTo(32,16); // vertikale Fuge oben
-  bctx.moveTo(16,16); bctx.lineTo(16,32); // vertikale Fugen unten
-  bctx.moveTo(48,16); bctx.lineTo(48,32);
-  bctx.stroke();
-  wallPattern = ctx.createPattern(brickCanvas,'repeat');
+// Lädt optional floor.png und wall.png aus dem assets‑Verzeichnis und erzeugt wiederholende Muster.
+async function createTextures(){
+  const loadImg = src => new Promise(res=>{
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = () => res(null);
+    img.src = src;
+  });
 
-  // Asphaltboden
-  const asphaltCanvas = document.createElement('canvas');
-  asphaltCanvas.width = asphaltCanvas.height = 64;
-  const actx = asphaltCanvas.getContext('2d');
-  actx.fillStyle = '#555';
-  actx.fillRect(0,0,64,64);
-  for(let i=0;i<200;i++){ // kleine Sprenkel
-    const g = Math.floor(80 + Math.random()*40);
-    actx.fillStyle = `rgb(${g},${g},${g})`;
-    actx.fillRect(Math.random()*64, Math.random()*64, 1,1);
+  // Wandtextur
+  const wallImg = await loadImg('assets/wall.png');
+  if(wallImg){
+    wallPattern = ctx.createPattern(wallImg,'repeat');
+  } else {
+    const brickCanvas = document.createElement('canvas');
+    brickCanvas.width = 64;
+    brickCanvas.height = 32;
+    const bctx = brickCanvas.getContext('2d');
+    bctx.fillStyle = '#b44';
+    bctx.fillRect(0,0,64,32);
+    bctx.strokeStyle = '#888';
+    bctx.lineWidth = 4;
+    bctx.beginPath();
+    bctx.moveTo(0,16); bctx.lineTo(64,16); // horizontale Fuge
+    bctx.moveTo(32,0); bctx.lineTo(32,16); // vertikale Fuge oben
+    bctx.moveTo(16,16); bctx.lineTo(16,32); // vertikale Fugen unten
+    bctx.moveTo(48,16); bctx.lineTo(48,32);
+    bctx.stroke();
+    wallPattern = ctx.createPattern(brickCanvas,'repeat');
   }
-  floorPattern = ctx.createPattern(asphaltCanvas,'repeat');
+
+  // Bodentextur
+  const floorImg = await loadImg('assets/floor.png');
+  if(floorImg){
+    floorPattern = ctx.createPattern(floorImg,'repeat');
+  } else {
+    const asphaltCanvas = document.createElement('canvas');
+    asphaltCanvas.width = asphaltCanvas.height = 64;
+    const actx = asphaltCanvas.getContext('2d');
+    actx.fillStyle = '#555';
+    actx.fillRect(0,0,64,64);
+    for(let i=0;i<200;i++){ // kleine Sprenkel
+      const g = Math.floor(80 + Math.random()*40);
+      actx.fillStyle = `rgb(${g},${g},${g})`;
+      actx.fillRect(Math.random()*64, Math.random()*64, 1,1);
+    }
+    floorPattern = ctx.createPattern(asphaltCanvas,'repeat');
+  }
 }
 
 // Resize
@@ -446,7 +464,7 @@ if(!pointerLockSupported){ showMessage('PointerLock nicht verfügbar — Fallbac
 // Start Spiel nach dem Laden der Texturen
 async function init(){
   await loadZombieImages();
-  createTextures();
+  await createTextures();
   startLevel(1);
   loop();
 }
