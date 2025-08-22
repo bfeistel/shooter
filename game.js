@@ -25,7 +25,7 @@ let keys = {};
 let zombies = [];
 let lastTime = performance.now();
 // Minimap configuration
-const minimapTileSize = 6; // pixel per tile in the minimap
+const minimapTileSize = 10; // pixel per tile in the minimap (larger minimap)
 const minimapMargin = 8;   // distance from top-left corner
 
 // Waffen
@@ -322,7 +322,6 @@ function drawMinimap(){
     for(let x=0;x<map[0].length;x++){
       const tile = map[y][x];
       if(tile===1) ctx.fillStyle='#444';
-      else if(tile===2) ctx.fillStyle='#aa4';
       else ctx.fillStyle='#222';
       ctx.fillRect(offsetX + x*tileSize, offsetY + y*tileSize, tileSize, tileSize);
     }
@@ -340,15 +339,6 @@ function drawMinimap(){
   ctx.moveTo(px, py);
   ctx.lineTo(px + Math.cos(player.angle)*tileSize, py + Math.sin(player.angle)*tileSize);
   ctx.stroke();
-
-  // Zombies
-  ctx.fillStyle = '#f44';
-  for(const z of zombies){
-    const zx = offsetX + z.x*tileSize;
-    const zy = offsetY + z.y*tileSize;
-    ctx.fillRect(zx - tileSize/2, zy - tileSize/2, tileSize, tileSize);
-  }
-
   ctx.restore();
 }
 
