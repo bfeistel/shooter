@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini FPS — Zombies</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Mini FPS — Zombies & Zielgebäude</h1>
+    <div id="hud">
+      <span id="level">Level: 1</span>
+      <span id="health">Leben: 100</span>
+      <span id="ammo">Gewehr: 30 | Pistole: 12</span>
+      <span id="objective">Ziel: Gebäude suchen</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- WICHTIG: Wenn du diese Seite in einem sandboxed iframe lädst, muss das iframe-Tag die Erlaubnis
+         allow-pointer-lock haben: <iframe src="index.html" sandbox="allow-scripts allow-pointer-lock"> -->
+    <canvas id="viewport" tabindex="0"></canvas>
+    <div id="overlay"></div>
+    <div id="controls">
+      <b>Steuerung</b>
+      <div>W/A/S/D — bewegen</div>
+      <div>Maus — Blick</div>
+      <div>Linke Maustaste — Schießen</div>
+      <div>Q — Waffe wechseln</div>
+      <div>R — Nachladen</div>
+      <div>ESC — Maus freigeben / zurück ins Spiel</div>
+      <div>E — Interagieren / Gebäude betreten</div>
+    </div>
+
+    <div id="message" class="hidden"></div>
+    <div id="crosshair">+</div>
+  </main>
+
+  <script src="game.js" defer></script>
+</body>
+</html>
