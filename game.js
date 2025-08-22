@@ -20,7 +20,7 @@ window.addEventListener('resize', resize); resize();
 // Spielzustand
 let level = 1;
 let map = [];
-let player = {x:2.5,y:2.5,angle:0,moveSpeed:2.6,health:100};
+let player = {x:2.5,y:2.5,angle:0,pitch:0,moveSpeed:2.6,health:100};
 let keys = {};
 let zombies = [];
 let lastTime = performance.now();
@@ -153,12 +153,18 @@ canvas.addEventListener('contextmenu', e=>{ e.preventDefault(); });
 // Mausbewegung — unterstützt pointer lock und fallback
 function onMouseMove(e){
   if(freePointerMode) return;
-  let movX = 0;
-  if(typeof e.movementX === 'number') movX = e.movementX; else {
+  let movX = 0, movY = 0;
+  if(typeof e.movementX === 'number'){
+    movX = e.movementX;
+    movY = e.movementY || 0;
+  } else {
     movX = (e.clientX - lastMouseX);
+    movY = (e.clientY - lastMouseY);
     lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
   }
   player.angle += movX * 0.0025;
+  player.pitch = Math.max(-Math.PI/4, Math.min(Math.PI/4, player.pitch - movY * 0.0025));
 }
 window.addEventListener('mousemove', onMouseMove);
 
@@ -243,18 +249,18 @@ function update(dt){
 
 function movePlayer(dx,dy){ const nx = player.x + dx, ny = player.y + dy; if(!isWall(nx, player.y)) player.x = nx; if(!isWall(player.x, ny)) player.y = ny; }
 
-function render(){ 
-  ctx.clearRect(0,0,canvas.width,canvas.height); 
-  const H = canvas.height, W = canvas.width; 
-  const half = H/2;
+function render(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const H = canvas.height, W = canvas.width;
+  const horizon = Math.max(0, Math.min(H, H/2 + Math.tan(player.pitch) * H));
 
   // Himmel (oben)
   ctx.fillStyle = '#88b';
-  ctx.fillRect(0,0,W,half);
+  ctx.fillRect(0,0,W,horizon);
 
   // Einfarbiger Boden (unten)
   ctx.fillStyle = floorColor;
-  ctx.fillRect(0,half,W,half);
+  ctx.fillRect(0,horizon,W,H - horizon);
 
   const fov = Math.PI/3; 
   const numRays = Math.min(200, Math.floor(W/2));
@@ -278,10 +284,10 @@ function render(){
     const col = i * (W/numRays);
     if(hit){
       ctx.fillStyle = hitTile===2 ? '#aa4' : '#6b6';
-      ctx.fillRect(col, half - wallHeight/2, Math.ceil(W/numRays)+1, wallHeight);
+      ctx.fillRect(col, horizon - wallHeight/2, Math.ceil(W/numRays)+1, wallHeight);
       const shade = Math.min(0.8, corrected / 20);
       ctx.fillStyle = `rgba(0,0,0,${shade})`;
-      ctx.fillRect(col, half - wallHeight/2, Math.ceil(W/numRays)+1, wallHeight);
+      ctx.fillRect(col, horizon - wallHeight/2, Math.ceil(W/numRays)+1, wallHeight);
     }
   }
   // Zombies als Billboards — nur rendern, wenn Line-of-Sight vorhanden (Verstecken hinter Wänden)
@@ -293,7 +299,7 @@ function render(){
     if(Math.abs(ang) < fov/2 && dist>0.4){ 
       const screenX = (0.5 + (ang / (fov)) ) * W; 
       const size = Math.min(H*1.2, (H*0.9) / dist); 
-      const y = H/2 - size/2; 
+      const y = horizon - size/2;
       const hpRatio = Math.max(0, z.hp) / (30+level*5);
       ctx.fillStyle = `rgba(${Math.floor(200*(1-hpRatio)+55)},${Math.floor(60*hpRatio+60)},${Math.floor(60*hpRatio+20)},1)`;
       ctx.fillRect(screenX - size/4, y, size/2, size);
